@@ -28,7 +28,7 @@ int main(int argc, char argv[])
         return 1;
     }
 
-    pcap_loop(handler, 3, handle_packets, NULL);
+    pcap_loop(handler, 0, handle_packets, NULL);
 
 
     return 0;
