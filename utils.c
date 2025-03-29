@@ -5,28 +5,25 @@
 
 
 
-bool is_adapter_availiable(const char* adapter)
+_Bool is_adapter_availiable(const char* adapter)
 {
-    pcap_if_t* node = malloc(sizeof(pcap_if_t));
-    char* buff = malloc(sizeof(1000));
-    
-    pcap_findalldevs(&node, buff);
+    pcap_if_t* node = NULL;
+    char* buff = malloc(PCAP_ERRBUF_SIZE);
 
-    printf("%s\n", buff);
+    char code = pcap_findalldevs(&node, buff);
+
+    if(code)
+    {
+        printf("NPCAP error message: \"%s\"\n", buff);
+        free(buff);
+        return false;
+    }
+
     free(buff);
-
-    #ifdef DEBUG
-    printf("Devices iterated:\n");
-    #endif
-
+        
     pcap_if_t* ptr = node;
     while(ptr)
     {
-
-        #ifdef DEBUG
-        printf("%s\n", ptr->name);
-        #endif
-
         if(!strcmp(ptr->name, adapter))
         {
             pcap_freealldevs(node);
@@ -38,4 +35,33 @@ bool is_adapter_availiable(const char* adapter)
 
     pcap_freealldevs(node);
     return false;
+}
+
+void print_availiable()
+{
+    pcap_if_t* node = NULL;
+    char* buff = malloc(PCAP_ERRBUF_SIZE);
+
+    char code = pcap_findalldevs(&node, buff);
+
+    if(code)
+    {
+        printf("NPCAP error message: \"%s\"\n", buff);
+        free(buff);
+        return;
+    }
+
+    free(buff);
+
+    printf("Devices availiable:\n");
+
+    pcap_if_t* ptr = node;
+    while(ptr)
+    {
+        printf("%s (%s)\n", ptr->name, ptr->description ? ptr->description : "no_description");
+        
+        ptr = ptr->next;
+    }
+
+    pcap_freealldevs(node);
 }

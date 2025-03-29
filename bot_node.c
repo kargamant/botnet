@@ -6,7 +6,13 @@
 
 int main(int argc, char argv[])
 {
-    is_adapter_availiable(adapter_id);
+    print_availiable();
+    _Bool availiable = is_adapter_availiable(adapter_id);
 
+    if(availiable)
+        printf("%s is availiable\n", adapter_id);
+    else
+        printf("%s is not availiable\n", adapter_id);
+    
     return 0;
 }
