@@ -1,5 +1,4 @@
 #include "utils.h"
-#include <pcap/pcap.h>
 #include <string.h>
 #include <stdlib.h>
 
@@ -8,18 +7,15 @@
 _Bool is_adapter_availiable(const char* adapter)
 {
     pcap_if_t* node = NULL;
-    char* buff = malloc(PCAP_ERRBUF_SIZE);
 
-    char code = pcap_findalldevs(&node, buff);
+    char code = pcap_findalldevs(&node, errbuff);
 
     if(code)
     {
-        printf("NPCAP error message: \"%s\"\n", buff);
-        free(buff);
+        NPCAP_ERROR
         return false;
     }
 
-    free(buff);
         
     pcap_if_t* ptr = node;
     while(ptr)
@@ -40,18 +36,14 @@ _Bool is_adapter_availiable(const char* adapter)
 void print_availiable()
 {
     pcap_if_t* node = NULL;
-    char* buff = malloc(PCAP_ERRBUF_SIZE);
 
-    char code = pcap_findalldevs(&node, buff);
+    char code = pcap_findalldevs(&node, errbuff);
 
     if(code)
     {
-        printf("NPCAP error message: \"%s\"\n", buff);
-        free(buff);
+        NPCAP_ERROR
         return;
     }
-
-    free(buff);
 
     printf("Devices availiable:\n");
 
@@ -64,4 +56,12 @@ void print_availiable()
     }
 
     pcap_freealldevs(node);
+}
+
+void handle_packets(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
+{
+    printf("Packet arrived at %ld with data:\n", h->ts.tv_sec);
+    for(int i=0; i<h->caplen; i++)
+        printf("%x ", bytes[i]);
+    printf("\n\n");
 }
