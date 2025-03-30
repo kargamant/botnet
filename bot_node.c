@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-        adapter_id = strdup(argv[1]);
+        adapter_id = argv[1];
     }
 
     printf("adapter_id: %s\n", adapter_id);

