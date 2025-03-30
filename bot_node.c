@@ -10,17 +10,38 @@
 extern char errbuff[PCAP_ERRBUF_SIZE];
 #define NPCAP_ERROR printf("NPCAP error message: \"%s\"\n", errbuff);
 
-extern const char* adapter_id;
+extern char* adapter_id;
 
 extern u_char bot_node_mac[6];
 extern u_char bot_node_ip[4];
 
-int main(int argc, char argv[])
+int main(int argc, char* argv[])
 {
+    // op1 - adapter name to listen to
+    if(argc<=1)
+    {
+        printf("Error. No adapter name specified.\n");
+        return 1;
+    }
+    else
+    {
+        adapter_id = strdup(argv[1]);
+    }
+
+    printf("adapter_id: %s\n", adapter_id);
+
     print_availiable();
     pcap_if_t device;
     _Bool availiable = is_adapter_availiable(adapter_id, &device);
     
+    if(availiable)
+    printf("%s is availiable\n\n", adapter_id);
+    else
+    {
+        printf("%s is not availiable\n\n", adapter_id);
+        return 1;
+    }
+
     struct pcap_addr* ptr = device.addresses;
     
     while(ptr)
@@ -78,19 +99,11 @@ int main(int argc, char argv[])
             printf("%d.", bot_node_ip[i]);
     printf("%d\n\n", bot_node_ip[3]);
     #endif
-
-    if(availiable)
-        printf("%s is availiable\n\n", adapter_id);
-    else
-    {
-        printf("%s is not availiable\n\n", adapter_id);
-        return 1;
-    }
     
     // 65536 - enough for a frame
     // promiscious to capture all packages, not only for us
     // 1000ms buffer timeout. That means that we will gather packets through this time and then analyze in portions 
-    pcap_t* handler = pcap_open_live(adapter_id, 65536, PCAP_OPENFLAG_PROMISCUOUS, 0, errbuff);
+    pcap_t* handler = pcap_open_live(device.name, 65536, PCAP_OPENFLAG_PROMISCUOUS, 0, errbuff);
 
     if(!handler)
     {

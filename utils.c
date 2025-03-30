@@ -24,7 +24,7 @@ _Bool is_adapter_availiable(const char* adapter, pcap_if_t* device)
     //pcap_if_t* prev = node;
     while(ptr)
     {
-        if(!strcmp(ptr->name, adapter))
+        if(!strcmp(ptr->name, adapter) || !strcmp(ptr->description, adapter))
         {
             //prev->next = ptr->next;
             *device = *ptr;
