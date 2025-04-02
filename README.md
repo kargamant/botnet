@@ -18,7 +18,7 @@ To run this module simply call it with following format:
 ``` $ bot_master.exe "<NIC_adapter_name>" <target_ip> <attack_time> <timeout> ```  
 
 ## bot_node  
-This module is listening for packages that bot_master sends. As soon as, the package is delivered bot_node compares source hardware address with chose bot_master MAC and extracts target_ip and attack_time.  
+This module is listening for packages that bot_master sends. As soon as, the package is delivered bot_node compares source hardware address with chosen bot_master MAC and extracts target_ip and attack_time.  
 Afterwards, it starts to send ARP packages on target_ip within given attack_time. Importantly, if bot_master's timeout is less than attack_time, the attack will be performed until bot_master is shut down.  
 When bot_master shuts down, bot_node finishes its last load of ARP packages and continue to listen.  
 
