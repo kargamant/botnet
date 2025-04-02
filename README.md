@@ -28,3 +28,24 @@ To run this module simply call it with following format:
 ## Build  
 Currently only windows build is supported. The system is resolved automatically.  
 ``` $ make ```  
+
+# Eperiment  
+Botnet was tested with following, not very comlicated network with 3 hosts.  
+![bot_net_experiment drawio (5)](https://github.com/user-attachments/assets/829ed636-85db-4ddd-bc17-c8c568398ec8)  
+The goal of the conducted experiment was to observe structure of bot_master packages and ARP spam from bot_node in wireshark on victim's pc.  
+  
+bot_node was listening on TPlink adapter with MAC as in the picture.  
+```$ bot_node.exe "TPLINK usb adapter"```  
+  
+bot_master was sending packages with target_ip set to victim's machine IP, attack time 10 seconds and timeout period 5 seconds.  
+```$ bot_master.exe "ASIX electron usb adapter" 192.168.0.33 10 5```  
+  
+Bot_master package:  
+![image](https://github.com/user-attachments/assets/8f7588c2-7f2c-4f14-82af-0bc98faa6e4d)  
+> btw 62:6f:74:6e:65:74 isn't just a number ;)
+
+Bot_node ARP spam package:  
+![image](https://github.com/user-attachments/assets/acc56aef-041f-4ee9-a2b0-55d6be50f8db)
+
+You can see full dump with timestamps [here](https://drive.google.com/file/d/1Y0UhJ9RMOeUqpthg-sdcFYC-39zg-bDe/view?usp=sharing)  
+
