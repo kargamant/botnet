@@ -103,7 +103,9 @@ int main(int argc, char* argv[])
     // 65536 - enough for a frame
     // promiscious to capture all packages, not only for us
     // 1000ms buffer timeout. That means that we will gather packets through this time and then analyze in portions 
-    pcap_t* handler = pcap_open_live(device.name, 65536, PCAP_OPENFLAG_PROMISCUOUS, 0, errbuff);
+    printf("device name: %s\n", device.name);
+    printf("adapter id: %s\n", adapter_id);
+    pcap_t* handler = pcap_open_live(adapter_id, 65536, PCAP_OPENFLAG_PROMISCUOUS, 0, errbuff);
 
     if(!handler)
     {

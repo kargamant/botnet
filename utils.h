@@ -1,7 +1,7 @@
 #pragma once
 #include <stdbool.h>
 #include <pcap/pcap.h>
-#define DEBUG
+//#define DEBUG
 
 void print_availiable();
 bool is_adapter_availiable(const char* adapter, pcap_if_t* device);
